@@ -1,0 +1,815 @@
+<!-- Chosen Palette: Inclusión y Confianza (Deep Blue, Vibrant Green, Soft Gold, White/Light Gray) -->
+<!-- Application Structure Plan: Se ha elegido una arquitectura de información de tipo "Landing Page Temática" con navegación anclada fija. Esta estructura es óptima para un proyecto social porque facilita una "narrativa de impacto" (storytelling) secuencial. El usuario es guiado desde el contexto y propósito (Inicio/Quiénes Somos) hacia las acciones (Programas/Cursos) y, finalmente, a la prueba de resultados (Impacto/Historias) y el llamado a la acción (Donaciones/Voluntariado). La navegación superior permite saltar rápidamente a cualquier sección, priorizando la facilidad de exploración sobre la estructura original del informe, lo que mejora la usabilidad y la tasa de conversión (donaciones/registro). -->
+<!-- Visualization & Content Choices:
+1. Misión/Visión/Valores: -> Goal: Definir Identidad -> Viz/Presentation Method: Cards con íconos (HTML/CSS) -> Interaction: None/Passive -> Justification: Claridad y escaneo rápido.
+2. Programas Sociales: -> Goal: Informar Oferta -> Viz/Presentation Method: Pestañas interactivas (Tabs) -> Interaction: Click para cambiar contenido (Vanilla JS) -> Justification: Conserva el espacio en pantalla (mobile-first) y agrupa contenido relacionado.
+3. Cursos y Formación: -> Goal: Proveer Utilidad -> Viz/Presentation Method: Grid de Tarjetas con enlaces externos reales -> Interaction: Clic en el enlace externo real, Filtro de Categoría (Vanilla JS) -> Justification: Alta utilidad inmediata para el usuario.
+4. Impacto y Transparencia: -> Goal: Probar Resultados/Progreso ODS 10 -> Viz/Presentation Method: Gráfico de Rosquilla (Doughnut Chart) y Gráfico de Barras (Chart.js/Canvas) -> Interaction: Tooltips, Botón de cambio de métrica (Vanilla JS) -> Justification: Visualización clara de la distribución de beneficiarios y el progreso de metas. Library/Method: Chart.js/Canvas.
+5. Historias Reales: -> Goal: Humanizar la Causa -> Viz/Presentation Method: Carrusel/Slider de Testimonios -> Interaction: Navegación por flechas (Vanilla JS) -> Justification: Mantiene la sección dinámica y concisa.
+6. Donaciones/Voluntariado: -> Goal: Conversión/Acción -> Viz/Presentation Method: Formularios Modales -> Interaction: Clic para abrir/cerrar modal (Vanilla JS) -> Justification: Minimiza distracciones en la página principal y guía al usuario a la acción.
+CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colombia Incluye | Unidos por la Inclusión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; scroll-behavior: smooth; }
+        :root {
+            --color-primary: #1e3a8a; /* Deep Blue */
+            --color-secondary: #10b981; /* Vibrant Green */
+            --color-accent: #d97706; /* Soft Gold */
+            --color-text: #374151; /* Dark Gray */
+        }
+        .bg-primary { background-color: var(--color-primary); }
+        .text-primary { color: var(--color-primary); }
+        .bg-secondary { background-color: var(--color-secondary); }
+        .text-secondary { color: var(--color-secondary); }
+        .bg-accent-soft { background-color: #fef3c7; } /* Light Gold Background */
+        .text-accent { color: var(--color-accent); }
+        .shadow-gold-hover:hover { box-shadow: 0 10px 15px -3px rgba(217, 119, 6, 0.2), 0 4px 6px -2px rgba(217, 119, 6, 0.1); transform: translateY(-3px); transition: all 0.3s ease; }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 650px; /* Max width to prevent excessive stretching on large screens */
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px; /* Fixed height for medium screens */
+            max-height: 400px;
+        }
+        @media (max-width: 640px) {
+            .chart-container { height: 300px; max-height: 300px; }
+        }
+    </style>
+</head>
+<body class="text-gray-700">
+
+    <!-- Navbar Fija -->
+    <nav id="nav-bar" class="fixed top-0 left-0 right-0 z-50 bg-white shadow-lg backdrop-blur-md bg-opacity-95">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="#inicio" class="text-xl font-extrabold text-primary flex items-center">
+                    <span class="text-3xl mr-2">🌎</span> Colombia Incluye
+                </a>
+                <div class="hidden md:flex space-x-6 text-sm font-medium">
+                    <a href="#quienes-somos" class="hover:text-secondary transition duration-150">Quiénes Somos</a>
+                    <a href="#programas" class="hover:text-secondary transition duration-150">Programas</a>
+                    <a href="#cursos" class="hover:text-secondary transition duration-150">Formación</a>
+                    <a href="#impacto" class="hover:text-secondary transition duration-150">Impacto</a>
+                    <a href="#historias" class="hover:text-secondary transition duration-150">Historias</a>
+                    <button onclick="showModal('donation-modal')" class="px-4 py-2 rounded-full bg-secondary text-white hover:bg-green-700 transition duration-300 shadow-md">DONAR</button>
+                </div>
+                <button id="menu-button" class="md:hidden text-primary focus:outline-none">
+                    <span class="text-2xl">&#x2630;</span>
+                </button>
+            </div>
+        </div>
+        <!-- Menú Móvil -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white shadow-xl">
+            <a href="#quienes-somos" class="block px-4 py-2 text-sm hover:bg-gray-100" onclick="toggleMenu()">Quiénes Somos</a>
+            <a href="#programas" class="block px-4 py-2 text-sm hover:bg-gray-100" onclick="toggleMenu()">Programas</a>
+            <a href="#cursos" class="block px-4 py-2 text-sm hover:bg-gray-100" onclick="toggleMenu()">Formación</a>
+            <a href="#impacto" class="block px-4 py-2 text-sm hover:bg-gray-100" onclick="toggleMenu()">Impacto</a>
+            <a href="#historias" class="block px-4 py-2 text-sm hover:bg-gray-100" onclick="toggleMenu()">Historias</a>
+            <button onclick="showModal('donation-modal'); toggleMenu();" class="block w-full text-left px-4 py-2 text-sm bg-secondary text-white hover:bg-green-700">DONAR</button>
+        </div>
+    </nav>
+
+    <main class="pt-16">
+
+        <!-- Sección 1: Inicio (Hero) -->
+        <section id="inicio" class="relative overflow-hidden pt-20 pb-20 md:pt-32 md:pb-40 bg-primary">
+            <div class="absolute inset-0 opacity-10" style="background-image: url('https://placehold.co/1920x1080/0e1e4a/ffffff?text=Fondo+Abstracto+Inclusión+y+Comunidad');"></div>
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+                <h1 class="text-4xl md:text-6xl font-extrabold mb-4">
+                    Unidos por la Inclusión
+                </h1>
+                <p class="text-xl md:text-2xl font-light mb-8 max-w-3xl mx-auto">
+                    GlobalTrade Colombia S.A.S. impulsa el ODS 10: Reducción de las Desigualdades. Generamos utilidades y transformamos vidas a través de la inclusión social, económica y laboral.
+                </p>
+                <div class="flex justify-center space-x-4">
+                    <button onclick="showModal('donation-modal')" class="px-8 py-3 bg-secondary text-lg font-bold rounded-full hover:bg-green-700 transition duration-300 shadow-xl">
+                        Apoya Nuestra Misión
+                    </button>
+                    <a href="#programas" class="px-8 py-3 bg-white text-primary text-lg font-bold rounded-full hover:bg-gray-200 transition duration-300 shadow-xl">
+                        Descubre los Programas
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 2: Quiénes Somos (Misión, Visión, Valores) -->
+        <section id="quienes-somos" class="py-16 md:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="block text-accent text-sm font-semibold mb-2 uppercase text-center">Nuestra Identidad</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-12 text-center">
+                    Empresa, RSE e Impacto Social
+                </h2>
+
+                <p class="mb-12 text-lg text-center max-w-4xl mx-auto">
+                    "Colombia Incluye" es el brazo de Responsabilidad Social Empresarial (RSE) de GlobalTrade Colombia S.A.S. Entendemos que el crecimiento empresarial y la prosperidad social van de la mano. Nuestro objetivo es ser un modelo en América Latina al integrar operaciones de importación, exportación y logística con la promoción activa del ODS 10 de la ONU: Reducción de las Desigualdades.
+                </p>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Misión Card -->
+                    <div class="p-6 bg-gray-50 rounded-xl shadow-lg shadow-primary/10 transition duration-300 hover:shadow-xl">
+                        <div class="text-4xl text-secondary mb-4">🎯</div>
+                        <h3 class="text-xl font-bold text-primary mb-3">Misión</h3>
+                        <p class="text-base">Promover la inclusión social, económica y laboral de comunidades vulnerables (jóvenes, mujeres, migrantes y rurales) a través de educación, empleo, capacitación y emprendimiento.</p>
+                    </div>
+
+                    <!-- Visión Card -->
+                    <div class="p-6 bg-gray-50 rounded-xl shadow-lg shadow-primary/10 transition duration-300 hover:shadow-xl">
+                        <div class="text-4xl text-secondary mb-4">🌟</div>
+                        <h3 class="text-xl font-bold text-primary mb-3">Visión</h3>
+                        <p class="text-base">Ser un modelo en América Latina de cómo una empresa internacional puede generar utilidades y transformar vidas, construyendo una sociedad más equitativa e incluyente.</p>
+                    </div>
+
+                    <!-- Valores Card -->
+                    <div class="p-6 bg-gray-50 rounded-xl shadow-lg shadow-primary/10 transition duration-300 hover:shadow-xl">
+                        <div class="text-4xl text-secondary mb-4">🤝</div>
+                        <h3 class="text-xl font-bold text-primary mb-3">Nuestros Valores</h3>
+                        <ul class="list-disc list-inside text-base space-y-1">
+                            <li>Compromiso Social</li>
+                            <li>Transparencia</li>
+                            <li>Equidad</li>
+                            <li>Innovación Inclusiva</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 3: Programas Sociales -->
+        <section id="programas" class="py-16 md:py-24 bg-gray-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="block text-accent text-sm font-semibold mb-2 uppercase text-center">Nuestras Iniciativas Clave</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-12 text-center">
+                    Ejes de Inclusión y Desarrollo
+                </h2>
+                
+                <p class="mb-12 text-lg text-center max-w-4xl mx-auto">
+                    Esta sección detalla los cuatro pilares fundamentales de acción con los que "Colombia Incluye" aborda la desigualdad. Al hacer clic en cada pestaña, encontrará información específica sobre cómo implementamos la Misión en la práctica, dirigida a nuestras comunidades vulnerables.
+                </p>
+
+                <div class="md:grid md:grid-cols-12 md:gap-8">
+                    <!-- Pestañas de Navegación -->
+                    <div class="md:col-span-4 flex flex-col space-y-4 mb-8 md:mb-0">
+                        <button class="program-tab text-left p-4 rounded-lg font-semibold transition duration-300 shadow-md bg-secondary text-white" data-target="empleo-inclusivo">
+                            💼 1. Empleo Inclusivo
+                        </button>
+                        <button class="program-tab text-left p-4 rounded-lg font-semibold transition duration-300 shadow-md bg-white text-primary hover:bg-gray-100" data-target="becas-educativas">
+                            📚 2. Becas Educativas
+                        </button>
+                        <button class="program-tab text-left p-4 rounded-lg font-semibold transition duration-300 shadow-md bg-white text-primary hover:bg-gray-100" data-target="microcreditos">
+                            💰 3. Microcréditos Solidarios
+                        </button>
+                        <button class="program-tab text-left p-4 rounded-lg font-semibold transition duration-300 shadow-md bg-white text-primary hover:bg-gray-100" data-target="emprendimiento">
+                            🚀 4. Capacitación y Emprendimiento
+                        </button>
+                    </div>
+
+                    <!-- Contenido de las Pestañas -->
+                    <div class="md:col-span-8 bg-white p-6 md:p-10 rounded-xl shadow-2xl shadow-gray-200">
+                        <!-- Contenido 1: Empleo Inclusivo (Visible por defecto) -->
+                        <div id="empleo-inclusivo" class="program-content">
+                            <h3 class="text-3xl font-extrabold text-primary mb-4">Programa de Empleo Inclusivo</h3>
+                            <p class="mb-4 text-lg">Creamos oportunidades laborales dentro de GlobalTrade Colombia S.A.S. y nuestra red de aliados, priorizando la contratación de jóvenes sin experiencia, mujeres cabeza de familia y migrantes con permisos laborales.</p>
+                            <ul class="list-disc list-outside ml-5 space-y-2 text-gray-600">
+                                <li>**Enfoque en la Logística:** Capacitación especializada en cadena de suministro, aduanas y comercio exterior.</li>
+                                <li>**Mentoring:** Acompañamiento personalizado para facilitar la adaptación al entorno laboral.</li>
+                                <li>**Objetivo 2025:** Incorporar 150 personas de comunidades vulnerables a la fuerza laboral formal.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Contenido 2: Becas Educativas -->
+                        <div id="becas-educativas" class="program-content hidden">
+                            <h3 class="text-3xl font-extrabold text-primary mb-4">Fondo de Becas "Futuro Inclusivo"</h3>
+                            <p class="mb-4 text-lg">Otorgamos becas completas y parciales para estudios técnicos y tecnológicos en áreas de alta demanda, como desarrollo de software, análisis de datos y habilidades blandas necesarias para el comercio internacional.</p>
+                            <ul class="list-disc list-outside ml-5 space-y-2 text-gray-600">
+                                <li>**Prioridad:** Mujeres en STEM y jóvenes de zonas rurales.</li>
+                                <li>**Aliados Académicos:** Convenios con instituciones de prestigio en Colombia y Latinoamérica.</li>
+                                <li>**Criterios de Selección:** Compromiso social y potencial de liderazgo, no solo mérito académico.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Contenido 3: Microcréditos Solidarios -->
+                        <div id="microcreditos" class="program-content hidden">
+                            <h3 class="text-3xl font-extrabold text-primary mb-4">Impulso al Emprendimiento Local</h3>
+                            <p class="mb-4 text-lg">Facilitamos el acceso a capital semilla con tasas de interés blandas y un periodo de gracia, dirigido a emprendedores rurales y negocios liderados por mujeres que generan empleo en sus comunidades.</p>
+                            <ul class="list-disc list-outside ml-5 space-y-2 text-gray-600">
+                                <li>**Asesoría Financiera:** Capacitación en gestión contable y planificación de negocios.</li>
+                                <li>**Montos:** Desde $500,000 COP hasta $5,000,000 COP.</li>
+                                <li>**Énfasis:** Proyectos con enfoque sostenible o cultural.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Contenido 4: Capacitación y Emprendimiento -->
+                        <div id="emprendimiento" class="program-content hidden">
+                            <h3 class="text-3xl font-extrabold text-primary mb-4">Ruta del Emprendedor Global</h3>
+                            <p class="mb-4 text-lg">Ofrecemos talleres intensivos y mentorías para formalizar pequeños negocios y prepararlos para la exportación de productos locales a través de la red logística de GlobalTrade Colombia S.A.S.</p>
+                            <ul class="list-disc list-outside ml-5 space-y-2 text-gray-600">
+                                <li>**Temas:** Marketing digital, normatividad de exportación e inglés para negocios.</li>
+                                <li>**Modalidad:** Híbrida (presencial en sedes y virtual a través de nuestra plataforma de cursos).</li>
+                                <li>**Graduación:** Acceso a ferias de comercio internacional.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 4: Cursos y Formación Interactiva -->
+        <section id="cursos" class="py-16 md:py-24 bg-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="block text-accent text-sm font-semibold mb-2 uppercase text-center">Educación Digital Gratuita</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-4 text-center">
+                    Cursos para el Desarrollo Inclusivo
+                </h2>
+
+                <p class="mb-12 text-lg text-center max-w-4xl mx-auto">
+                    La educación es la herramienta más poderosa para reducir las desigualdades. Hemos seleccionado y agrupado recursos gratuitos y de alta calidad de plataformas reconocidas que complementan nuestros programas. Use el filtro para encontrar el área de su interés y acceda al enlace real.
+                </p>
+
+                <!-- Filtro de Categorías -->
+                <div class="flex flex-wrap justify-center gap-3 mb-12">
+                    <button class="filter-btn text-sm font-semibold px-4 py-2 rounded-full border-2 border-primary bg-primary text-white hover:bg-primary/90 transition" data-category="all">Mostrar Todos</button>
+                    <button class="filter-btn text-sm font-semibold px-4 py-2 rounded-full border-2 border-primary text-primary hover:bg-primary/10 transition" data-category="logistica">Logística y Comercio</button>
+                    <button class="filter-btn text-sm font-semibold px-4 py-2 rounded-full border-2 border-primary text-primary hover:bg-primary/10 transition" data-category="habilidades">Habilidades Digitales</button>
+                    <button class="filter-btn text-sm font-semibold px-4 py-2 rounded-full border-2 border-primary text-primary hover:bg-primary/10 transition" data-category="emprendimiento">Emprendimiento</button>
+                </div>
+
+                <!-- Grid de Cursos -->
+                <div id="course-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Curso 1: Logística Básica -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="logistica">
+                        <div class="text-3xl text-primary mb-3">📦</div>
+                        <h3 class="text-xl font-bold mb-2">Introducción a la Cadena de Suministro</h3>
+                        <p class="text-sm text-gray-600 mb-4">Conceptos básicos de importación, exportación y gestión de almacenes. Clave para el empleo en GlobalTrade.</p>
+                        <a href="https://www.coursera.org/courses?query=logistica" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en Coursera <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                    <!-- Curso 2: Marketing Digital -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="habilidades emprendimiento">
+                        <div class="text-3xl text-primary mb-3">💻</div>
+                        <h3 class="text-xl font-bold mb-2">Fundamentos de Marketing Digital</h3>
+                        <p class="text-sm text-gray-600 mb-4">Aprende a promocionar tu emprendimiento en línea. Certificado gratuito de Google.</p>
+                        <a href="https://learndigital.withgoogle.com/activate/courses/fundamentos-marketing-digital" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en Google <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                    <!-- Curso 3: Habilidades Blandas -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="habilidades">
+                        <div class="text-3xl text-primary mb-3">🗣️</div>
+                        <h3 class="text-xl font-bold mb-2">Comunicación Efectiva y Liderazgo</h3>
+                        <p class="text-sm text-gray-600 mb-4">Desarrolla habilidades esenciales para el trabajo en equipo y el liderazgo social.</p>
+                        <a href="https://www.edx.org/es/course/habilidades-blandas-para-el-liderazgo" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en edX <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                    <!-- Curso 4: Finanzas Personales -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="emprendimiento">
+                        <div class="text-3xl text-primary mb-3">💵</div>
+                        <h3 class="text-xl font-bold mb-2">Gestión Financiera para Microempresas</h3>
+                        <p class="text-sm text-gray-600 mb-4">Indispensable para solicitantes de Microcréditos Solidarios. Aprende a manejar ingresos y egresos.</p>
+                        <a href="https://www.cursanet.org/es/course/finanzas-para-emprendedores" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en Cursanet <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                    <!-- Curso 5: Excel Básico -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="habilidades logistica">
+                        <div class="text-3xl text-primary mb-3">📊</div>
+                        <h3 class="text-xl font-bold mb-2">Manejo de Hojas de Cálculo (Excel)</h3>
+                        <p class="text-sm text-gray-600 mb-4">Dominar esta herramienta es clave para la gestión de datos en cualquier entorno laboral moderno.</p>
+                        <a href="https://learndigital.withgoogle.com/activate/courses/hojas-de-calculo-excel" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en Google <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                    <!-- Curso 6: Inglés de Negocios -->
+                    <div class="course-card p-6 rounded-xl shadow-lg border-t-4 border-secondary bg-gray-50 transition duration-300 hover:shadow-xl shadow-gold-hover" data-category="logistica">
+                        <div class="text-3xl text-primary mb-3">🇬🇧</div>
+                        <h3 class="text-xl font-bold mb-2">Inglés para Comercio Exterior</h3>
+                        <p class="text-sm text-gray-600 mb-4">Frases y terminología esencial para la comunicación en importaciones y exportaciones.</p>
+                        <a href="https://www.edx.org/es/search?q=english+business" target="_blank" class="text-secondary font-semibold hover:underline flex items-center">
+                            Tomar Curso en edX <span class="ml-1 text-base">&#x27A4;</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 5: Impacto y Transparencia -->
+        <section id="impacto" class="py-16 md:py-24 bg-accent-soft">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="block text-accent text-sm font-semibold mb-2 uppercase text-center">Datos y Resultados (ODS 10)</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-4 text-center">
+                    Medición de Nuestro Impacto Social
+                </h2>
+
+                <p class="mb-12 text-lg text-center max-w-4xl mx-auto">
+                    La transparencia es nuestro compromiso. Los siguientes gráficos muestran de forma dinámica las métricas simuladas de nuestro impacto, destacando la distribución de los beneficiarios por grupo y el progreso en la consecución de nuestras metas anuales. Los datos son simulados, pero representan los indicadores reales que monitoreamos.
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-10 items-start">
+                    <!-- Chart 1: Beneficiarios por Grupo (Doughnut) -->
+                    <div class="p-6 bg-white rounded-xl shadow-lg">
+                        <h3 class="text-xl font-bold text-primary mb-4">Beneficiarios Totales por Grupo (Acumulado)</h3>
+                        <p class="text-sm text-gray-500 mb-4">El gráfico de rosquilla permite ver cómo distribuimos nuestros esfuerzos para impactar a los grupos más vulnerables de Colombia.</p>
+                        <div class="chart-container">
+                            <canvas id="beneficiariesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Progreso Anual (Bar/Barra) -->
+                    <div class="p-6 bg-white rounded-xl shadow-lg">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-primary">Progreso en Metas Anuales (Simulado 2024)</h3>
+                            <button id="toggleMetricBtn" class="px-3 py-1 bg-primary text-white text-xs rounded-full hover:bg-primary/90 transition">
+                                Ver Becas
+                            </button>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4">Monitoreamos el avance del empleo y las becas. Use el botón para cambiar la métrica visualizada.</p>
+                        <div class="chart-container">
+                            <canvas id="progressChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alianzas Internacionales -->
+                <div id="alianzas" class="mt-20">
+                    <h3 class="text-2xl font-extrabold text-primary mb-8 text-center">Nuestras Alianzas Estratégicas</h3>
+                    <p class="text-lg text-center max-w-4xl mx-auto mb-8">Trabajamos de la mano con líderes globales para maximizar nuestro impacto en línea con el ODS 17 (Alianzas para lograr los objetivos).</p>
+                    <div class="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-75">
+                        <div class="text-3xl text-primary font-bold">ONU ODS</div>
+                        <div class="text-3xl text-green-700 font-bold">Cámara de Comercio</div>
+                        <div class="text-3xl text-blue-500 font-bold">Universidad Aliada</div>
+                        <div class="text-3xl text-gray-500 font-bold">NGO Global</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 6: Historias Reales (Testimonios) -->
+        <section id="historias" class="py-16 md:py-24 bg-gray-100">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <span class="block text-accent text-sm font-semibold mb-2 uppercase text-center">Transformación Humana</span>
+                <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-12 text-center">
+                    El Impacto en Primera Persona
+                </h2>
+
+                <p class="mb-12 text-lg text-center">
+                    Cada cifra de impacto representa una historia de vida transformada. Conozca testimonios inspirados en casos de éxito posibles, donde la inclusión social, económica y laboral fue el motor de cambio para jóvenes, mujeres y migrantes.
+                </p>
+
+                <!-- Carrusel de Testimonios -->
+                <div id="carousel" class="relative bg-white p-8 md:p-12 rounded-xl shadow-2xl">
+                    <div id="testimonial-container" class="overflow-hidden">
+                        <!-- Los testimonios se cargarán aquí con JS -->
+                    </div>
+
+                    <!-- Controles del Carrusel -->
+                    <button id="prev-btn" class="absolute left-3 top-1/2 transform -translate-y-1/2 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/80 transition text-lg">
+                        &lt;
+                    </button>
+                    <button id="next-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-primary text-white p-3 rounded-full shadow-lg hover:bg-primary/80 transition text-lg">
+                        &gt;
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 7: Donaciones y Voluntariado (CTAs Finales) -->
+        <section class="py-16 md:py-24 bg-primary text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-4">
+                    Sé Parte del Cambio. Actúa Hoy.
+                </h2>
+                <p class="text-xl font-light mb-10 max-w-3xl mx-auto">
+                    Tu apoyo financiero o tu tiempo como voluntario es el motor que impulsa la reducción de la desigualdad en Colombia.
+                </p>
+                <div class="flex flex-col md:flex-row justify-center space-y-6 md:space-y-0 md:space-x-8">
+                    <button onclick="showModal('donation-modal')" class="px-10 py-4 bg-secondary text-lg font-bold rounded-full hover:bg-green-700 transition duration-300 shadow-xl shadow-secondary/50">
+                        HACER UNA DONACIÓN 💰
+                    </button>
+                    <button onclick="showModal('volunteer-modal')" class="px-10 py-4 bg-white text-primary text-lg font-bold rounded-full hover:bg-gray-200 transition duration-300 shadow-xl shadow-white/50">
+                        SER VOLUNTARIO 🤝
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección 8: Contacto y Footer -->
+        <footer class="bg-gray-800 text-white">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="grid md:grid-cols-4 gap-8 border-b border-gray-700 pb-8">
+                    <!-- Col 1: Logo y Lema -->
+                    <div>
+                        <a href="#inicio" class="text-2xl font-extrabold flex items-center mb-3">
+                            <span class="text-3xl mr-2 text-secondary">🌎</span> Colombia Incluye
+                        </a>
+                        <p class="text-sm">El brazo de RSE de GlobalTrade Colombia S.A.S.</p>
+                        <p class="text-sm font-semibold mt-2 text-accent">"Unidos por la inclusión"</p>
+                    </div>
+
+                    <!-- Col 2: Enlaces Rápidos -->
+                    <div>
+                        <h4 class="font-bold mb-4 uppercase text-secondary">Explora</h4>
+                        <ul class="space-y-2 text-sm">
+                            <li><a href="#quienes-somos" class="hover:text-secondary transition">Quiénes Somos</a></li>
+                            <li><a href="#programas" class="hover:text-secondary transition">Programas Sociales</a></li>
+                            <li><a href="#impacto" class="hover:text-secondary transition">Impacto</a></li>
+                            <li><a href="#cursos" class="hover:text-secondary transition">Cursos y Formación</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Col 3: Contacto -->
+                    <div>
+                        <h4 class="font-bold mb-4 uppercase text-secondary">Contáctanos</h4>
+                        <p class="text-sm mb-2">
+                            <a href="mailto:info@colombiaincluye.org" class="hover:text-secondary transition">✉️ info@colombiaincluye.org</a>
+                        </p>
+                        <p class="text-sm mb-2">
+                            <a href="tel:+576011234567" class="hover:text-secondary transition">📞 +57 (601) 123 4567</a>
+                        </p>
+                        <p class="text-sm">📍 Bogotá, Colombia</p>
+                    </div>
+
+                    <!-- Col 4: Redes Sociales -->
+                    <div>
+                        <h4 class="font-bold mb-4 uppercase text-secondary">Síguenos</h4>
+                        <div class="flex space-x-4 text-xl">
+                            <a href="https://www.facebook.com/ODSdesarrollo" target="_blank" class="hover:text-secondary transition">
+                                <span class="text-3xl">📘</span>
+                            </a>
+                            <a href="https://twitter.com/ONU_es" target="_blank" class="hover:text-secondary transition">
+                                <span class="text-3xl">🐦</span>
+                            </a>
+                            <a href="https://www.linkedin.com/company/globaltrade-colombia-sas" target="_blank" class="hover:text-secondary transition">
+                                <span class="text-3xl">🔗</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-8 text-center text-sm text-gray-500">
+                    &copy; 2024 Colombia Incluye | Iniciativa de GlobalTrade Colombia S.A.S. | ODS 10
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <!-- Modal de Donación -->
+    <div id="donation-modal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-2xl font-bold text-primary">Haz tu Donación</h3>
+                <button onclick="hideModal('donation-modal')" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <p class="mb-6 text-gray-600">Tu aporte es crucial para el empleo y la educación inclusiva. Redirigiremos a una plataforma de pago simulada.</p>
+            <form onsubmit="handleDonation(event)">
+                <div class="mb-4">
+                    <label for="amount" class="block text-sm font-medium text-gray-700">Monto (COP)</label>
+                    <input type="number" id="amount" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-secondary focus:border-secondary" placeholder="Ej: 50000" min="10000">
+                </div>
+                <div class="mb-6">
+                    <label for="name" class="block text-sm font-medium text-gray-700">Nombre Completo</label>
+                    <input type="text" id="name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-secondary focus:border-secondary">
+                </div>
+                <button type="submit" class="w-full py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-green-700 transition duration-300">
+                    Proceder al Pago Simulacro
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Voluntariado -->
+    <div id="volunteer-modal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-8 max-w-lg w-full shadow-2xl">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-2xl font-bold text-primary">Únete como Voluntario</h3>
+                <button onclick="hideModal('volunteer-modal')" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
+            </div>
+            <p class="mb-6 text-gray-600">Necesitamos tu experiencia en mentoría, logística o educación. Llena el formulario y nos contactaremos contigo.</p>
+            <form onsubmit="handleVolunteer(event)">
+                <div class="mb-4">
+                    <label for="v-name" class="block text-sm font-medium text-gray-700">Nombre</label>
+                    <input type="text" id="v-name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-secondary focus:border-secondary">
+                </div>
+                <div class="mb-4">
+                    <label for="v-email" class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
+                    <input type="email" id="v-email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-secondary focus:border-secondary">
+                </div>
+                <div class="mb-6">
+                    <label for="v-area" class="block text-sm font-medium text-gray-700">Área de Interés/Experticia</label>
+                    <select id="v-area" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-secondary focus:border-secondary">
+                        <option value="">Selecciona un área</option>
+                        <option value="mentoria">Mentoría profesional</option>
+                        <option value="logistica">Logística y Operaciones</option>
+                        <option value="educacion">Educación y Capacitación</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition duration-300">
+                    Enviar Solicitud
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Mensaje General (Usado para Confirmaciones) -->
+    <div id="message-modal" class="modal fixed inset-0 bg-black bg-opacity-50 hidden z-[101] flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl text-center">
+            <div id="message-content" class="mb-6 text-lg font-medium text-primary"></div>
+            <button onclick="hideModal('message-modal')" class="py-2 px-6 bg-secondary text-white rounded-lg hover:bg-green-700 transition">Cerrar</button>
+        </div>
+    </div>
+
+
+    <script>
+        const data = {
+            beneficiaries: {
+                labels: ['Mujeres Jefes de Hogar', 'Jóvenes (18-25 años)', 'Migrantes', 'Comunidades Rurales'],
+                values: [45, 30, 15, 10],
+                colors: ['#1e3a8a', '#10b981', '#d97706', '#60a5fa']
+            },
+            progress: {
+                labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+                employment: [30, 65, 100, 150], // Meta de 150 empleos
+                scholarships: [10, 25, 40, 50],  // Meta de 50 becas
+                max: 150
+            },
+            testimonials: [
+                { quote: "Gracias al programa de Empleo Inclusivo, pasé de la informalidad a tener un trabajo estable en logística. Mi vida y la de mis hijos cambió totalmente.", author: "María P., Beneficiaria del Programa Empleo Inclusivo" },
+                { quote: "Obtuve una beca para estudiar programación. Es increíble cómo GlobalTrade nos da herramientas para competir en un mercado laboral global.", author: "Juan C., Joven Becario en Tecnología" },
+                { quote: "Con el microcrédito solidario, mi negocio de artesanías rurales pudo formalizarse y ahora planeamos nuestra primera exportación.", author: "Elena R., Emprendedora Rural y Cliente de Microcréditos" }
+            ],
+        };
+
+        let currentMetric = 'employment';
+        let currentSlide = 0;
+        let myBeneficiariesChart, myProgressChart;
+
+        // --- Funciones Modales ---
+        function showModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function hideModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showMessage(message) {
+            document.getElementById('message-content').innerHTML = message;
+            showModal('message-modal');
+        }
+
+        function handleDonation(event) {
+            event.preventDefault();
+            const amount = document.getElementById('amount').value;
+            const name = document.getElementById('name').value;
+            hideModal('donation-modal');
+            showMessage(`¡Gracias, ${name}! Tu donación de $${amount} COP ha sido registrada (Simulacro de Pago Exitoso).`);
+        }
+
+        function handleVolunteer(event) {
+            event.preventDefault();
+            const name = document.getElementById('v-name').value;
+            const email = document.getElementById('v-email').value;
+            const area = document.getElementById('v-area').value;
+            hideModal('volunteer-modal');
+            showMessage(`¡Bienvenido, ${name}! Hemos recibido tu solicitud de voluntariado en el área de ${area}. Pronto te contactaremos al correo ${email}.`);
+        }
+
+        // --- Funciones de Chart.js ---
+
+        function wrapLabel(label) {
+            if (typeof label !== 'string') return label;
+            const MAX_LENGTH = 16;
+            const words = label.split(' ');
+            let line = '';
+            let wrappedLabels = [];
+
+            words.forEach(word => {
+                if ((line + ' ' + word).length > MAX_LENGTH) {
+                    wrappedLabels.push(line);
+                    line = word;
+                } else {
+                    line = line ? line + ' ' + word : word;
+                }
+            });
+            wrappedLabels.push(line);
+            return wrappedLabels;
+        }
+
+
+        function createBeneficiariesChart() {
+            const ctx = document.getElementById('beneficiariesChart').getContext('2d');
+            myBeneficiariesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.beneficiaries.labels.map(wrapLabel),
+                    datasets: [{
+                        data: data.beneficiaries.values,
+                        backgroundColor: data.beneficiaries.colors,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Distribución en Porcentaje (%)',
+                            font: {
+                                family: 'Inter',
+                                size: 16
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed !== null) label += context.parsed + '%';
+                                    return label.replace(',', ' '); // Remove Chart.js default comma in wrapped labels
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createProgressChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            myProgressChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.progress.labels,
+                    datasets: [{
+                        label: 'Empleos Generados (Meta: 150)',
+                        data: data.progress.employment,
+                        backgroundColor: 'rgba(30, 58, 138, 0.8)', // Deep Blue
+                        borderColor: '#1e3a8a',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Progreso Acumulado por Trimestre (Q)',
+                            font: {
+                                family: 'Inter',
+                                size: 16
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: data.progress.max,
+                            title: {
+                                display: true,
+                                text: 'Cantidad de Beneficiarios'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateProgressChart() {
+            const btn = document.getElementById('toggleMetricBtn');
+            if (currentMetric === 'employment') {
+                currentMetric = 'scholarships';
+                myProgressChart.data.datasets[0].label = 'Becas Otorgadas (Meta: 50)';
+                myProgressChart.data.datasets[0].data = data.progress.scholarships;
+                myProgressChart.data.datasets[0].backgroundColor = 'rgba(16, 185, 129, 0.8)'; // Vibrant Green
+                myProgressChart.options.scales.y.max = 50;
+                btn.textContent = 'Ver Empleos';
+            } else {
+                currentMetric = 'employment';
+                myProgressChart.data.datasets[0].label = 'Empleos Generados (Meta: 150)';
+                myProgressChart.data.datasets[0].data = data.progress.employment;
+                myProgressChart.data.datasets[0].backgroundColor = 'rgba(30, 58, 138, 0.8)'; // Deep Blue
+                myProgressChart.options.scales.y.max = data.progress.max;
+                btn.textContent = 'Ver Becas';
+            }
+            myProgressChart.update();
+        }
+
+        // --- Funciones de Navegación y Carrusel ---
+
+        function toggleMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function changeProgramTab(targetId, button) {
+            document.querySelectorAll('.program-content').forEach(content => content.classList.add('hidden'));
+            document.querySelectorAll('.program-tab').forEach(btn => {
+                btn.classList.remove('bg-secondary', 'text-white');
+                btn.classList.add('bg-white', 'text-primary', 'hover:bg-gray-100');
+            });
+
+            document.getElementById(targetId).classList.remove('hidden');
+            button.classList.remove('bg-white', 'text-primary', 'hover:bg-gray-100');
+            button.classList.add('bg-secondary', 'text-white');
+        }
+
+        function filterCourses(category) {
+            document.querySelectorAll('.course-card').forEach(card => {
+                if (category === 'all' || card.getAttribute('data-category').includes(category)) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('text-primary');
+                if (btn.getAttribute('data-category') === category) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('text-primary');
+                }
+            });
+        }
+
+        function renderTestimonial() {
+            const testimonial = data.testimonials[currentSlide];
+            const container = document.getElementById('testimonial-container');
+            container.innerHTML = `
+                <div class="text-center transition duration-500 ease-in-out">
+                    <p class="text-2xl font-serif italic mb-6 text-gray-700">“${testimonial.quote}”</p>
+                    <p class="text-lg font-bold text-secondary">— ${testimonial.author}</p>
+                </div>
+            `;
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % data.testimonials.length;
+            renderTestimonial();
+        }
+
+        function prevSlide() {
+            currentSlide = (currentSlide - 1 + data.testimonials.length) % data.testimonials.length;
+            renderTestimonial();
+        }
+
+
+        // --- Inicialización de la Aplicación (DOMContentLoaded) ---
+        window.onload = function() {
+            // Inicializar Gráficos
+            createBeneficiariesChart();
+            createProgressChart();
+
+            // Event Listeners para Gráfico de Progreso
+            document.getElementById('toggleMetricBtn').addEventListener('click', updateProgressChart);
+
+            // Event Listeners para Navegación Móvil
+            document.getElementById('menu-button').addEventListener('click', toggleMenu);
+
+            // Event Listeners para Pestañas de Programas
+            document.querySelectorAll('.program-tab').forEach(button => {
+                button.addEventListener('click', function() {
+                    changeProgramTab(this.getAttribute('data-target'), this);
+                });
+            });
+
+            // Inicializar pestañas para mostrar el primer elemento y estilizar el botón
+            document.querySelector('.program-tab').click();
+
+
+            // Event Listeners para Filtros de Cursos
+            document.querySelectorAll('.filter-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    filterCourses(this.getAttribute('data-category'));
+                });
+            });
+            // Inicializar filtro de cursos
+            document.querySelector('.filter-btn[data-category="all"]').click();
+
+            // Inicializar Carrusel de Testimonios
+            renderTestimonial();
+            document.getElementById('next-btn').addEventListener('click', nextSlide);
+            document.getElementById('prev-btn').addEventListener('click', prevSlide);
+        };
+    </script>
+</body>
+</html>
